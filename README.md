@@ -6,8 +6,9 @@ Steer the claw, but it swings on its cable: wait for it to settle, then drop
 it and grab a blob as it drifts by. Play at
 **https://ernkerr.github.io/lava-claw/**.
 
-For now the page shows two looks side by side, a real-looking machine and a
-flat cartoon one, running the same game at once.
+It's drawn flat and straight on, like the room on erinkerr.me's About page,
+but lit: a neon sign and chasing bulbs, and a lava lamp glowing amber in the
+dark machine, its glass narrowing to the top like a real one.
 
 ## Play
 
@@ -27,7 +28,7 @@ No build step; open it with any static server (`python3 -m http.server`).
 | --- | --- |
 | `js/game.js` | the game: lava physics, the claw's swing, grabbing and slipping |
 | `js/field.js` | the wax as a metaball field, so blobs melt into each other |
-| `js/draw-real.js`, `js/draw-flat.js` | the two looks, drawing the same state |
+| `js/draw.js` | the machine, drawn on a canvas |
 | `js/sound.js` | the machine's sounds, made with Web Audio |
 | `js/main.js` | controls and the loop |
 

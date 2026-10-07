@@ -12,24 +12,26 @@ const values = new Float32Array(COLS * ROWS);
 export function computeField(blobs, time) {
   values.fill(0);
   for (const b of blobs) {
-    const reach = b.r * 3.2;
+    // Rising wax stretches tall; sinking wax squashes.
+    const tall = b.held ? 1 : Math.max(0.78, Math.min(1.5, 1 - b.vy * 0.03));
+    const wide = 1 / Math.sqrt(tall);
     const r2 = b.r * b.r;
-    const i0 = Math.max(0, Math.floor((b.x - reach) / CELL));
-    const i1 = Math.min(COLS - 1, Math.ceil((b.x + reach) / CELL));
-    const j0 = Math.max(0, Math.floor((b.y - reach) / CELL));
-    const j1 = Math.min(ROWS - 1, Math.ceil((b.y + reach) / CELL));
+    const i0 = Math.max(0, Math.floor((b.x - b.r * 3.2 * wide) / CELL));
+    const i1 = Math.min(COLS - 1, Math.ceil((b.x + b.r * 3.2 * wide) / CELL));
+    const j0 = Math.max(0, Math.floor((b.y - b.r * 3.2 * tall) / CELL));
+    const j1 = Math.min(ROWS - 1, Math.ceil((b.y + b.r * 3.2 * tall) / CELL));
     for (let j = j0; j <= j1; j++) {
-      const dy = j * CELL - b.y;
+      const dy = (j * CELL - b.y) / tall;
       const row = j * COLS;
       for (let i = i0; i <= i1; i++) {
-        const dx = i * CELL - b.x;
+        const dx = (i * CELL - b.x) / wide;
         values[row + i] += r2 / (dx * dx + dy * dy + 1);
       }
     }
   }
-  // The lump of wax lying on the tank's floor, its top gently rolling.
-  const i0 = Math.ceil(TANK.x0 / CELL);
-  const i1 = Math.floor(TANK.x1 / CELL);
+  // The lump of wax lying on the lamp's floor, its top gently rolling.
+  const i0 = Math.ceil((TANK.cx - TANK.halfBottom + 4) / CELL);
+  const i1 = Math.floor((TANK.cx + TANK.halfBottom - 4) / CELL);
   const jf = Math.floor(TANK.floor / CELL);
   for (let i = i0; i <= i1; i++) {
     const x = i * CELL;

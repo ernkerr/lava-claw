@@ -25,22 +25,15 @@
         <div>
           <h1 class="wordmark">Lava Claw</h1>
           <p class="lede">
-            A claw machine where the prizes are the wax in a lava lamp. Two looks for the same game: play, and
-            they move together.
+            A claw machine where the prizes are the wax in a lava lamp. Steer the claw, let it settle, and grab a
+            blob as it drifts by.
           </p>
         </div>
         <button type="button" class="pill" id="sound" aria-pressed="true">Sound on</button>
       </header>
 
-      <div class="machines">
-        <figure>
-          <canvas id="real" role="img" aria-label="The claw machine, real-looking"></canvas>
-          <figcaption>Real-looking</figcaption>
-        </figure>
-        <figure>
-          <canvas id="flat" role="img" aria-label="The claw machine, flat cartoon"></canvas>
-          <figcaption>Flat cartoon</figcaption>
-        </figure>
+      <div class="stage">
+        <canvas id="machine" role="img" aria-label="A claw machine with a lava lamp inside"></canvas>
       </div>
 
       <footer class="bottom">

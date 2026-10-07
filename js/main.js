@@ -1,16 +1,12 @@
 import { newGame, step, clawPoint } from "./game.js";
 import { computeField } from "./field.js";
 import { FRAME } from "./layout.js";
-import { drawReal } from "./draw-real.js";
-import { drawFlat } from "./draw-flat.js";
+import { draw } from "./draw.js";
 import * as sound from "./sound.js";
 
 const $ = (sel) => document.querySelector(sel);
-const machines = [
-  { canvas: $("#real"), draw: drawReal },
-  { canvas: $("#flat"), draw: drawFlat },
-];
-for (const m of machines) m.ctx = m.canvas.getContext("2d");
+const canvas = $("#machine");
+const ctx = canvas.getContext("2d");
 
 const state = newGame();
 const SAVE = "lava-claw:caught";
@@ -25,14 +21,12 @@ try {
 let scale = 1;
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  for (const m of machines) {
-    const rect = m.canvas.getBoundingClientRect();
-    m.canvas.width = Math.round(rect.width * dpr);
-    m.canvas.height = Math.round(rect.height * dpr);
-    scale = (rect.width / FRAME.w) * dpr;
-  }
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  scale = (rect.width / FRAME.w) * dpr;
 }
-new ResizeObserver(resize).observe($(".machines"));
+new ResizeObserver(resize).observe(canvas);
 
 // ---- Controls: arrow keys or A/D to steer, Space, Enter or Down to drop ----
 
@@ -91,7 +85,7 @@ soundBtn.addEventListener("click", () => {
   soundBtn.setAttribute("aria-pressed", String(soundOn));
 });
 
-// ---- Words under the machines ----
+// ---- Words under the machine ----
 
 const status = $("#status");
 const count = $("#count");
@@ -148,10 +142,8 @@ function frame(now) {
   sound.motor(Math.max(Math.abs(state.carriage.v), cableSpeed));
 
   const F = computeField(state.blobs, state.time);
-  for (const m of machines) {
-    m.ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    m.draw(m.ctx, state, F, input);
-  }
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  draw(ctx, state, F, input);
 }
 
 count.textContent = state.caught;

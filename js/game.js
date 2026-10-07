@@ -10,11 +10,18 @@ export const WORLD = { w: 360, h: 520 };
 export const RAIL_Y = 28;
 // The prize chute, in the front left corner.
 export const CHUTE = { x0: 0, x1: 72, top: 330 };
-// The lava tank: the claw comes in through its open top.
-export const TANK = { x0: 86, x1: 350, top: 122, floor: 506 };
+// The lava lamp's glass: narrow at its open top, where the claw comes in,
+// widening down to the collar, like a real lamp's globe. Below the collar is
+// its chrome foot.
+export const TANK = { cx: 218, top: 122, floor: 476, halfTop: 74, halfBottom: 128 };
+TANK.x0 = TANK.cx - TANK.halfBottom;
+TANK.x1 = TANK.cx + TANK.halfBottom;
+// The glass's half width at height y.
+export const halfAt = (y) =>
+  TANK.halfTop + (TANK.halfBottom - TANK.halfTop) * Math.max(0, Math.min(1, (y - TANK.top) / (TANK.floor - TANK.top)));
 // Where the claw waits and drops its prize, over the chute.
 const HOME_X = 36;
-const CARRIAGE = { min: 30, max: 330, speed: 165, accel: 520, brake: 640 };
+const CARRIAGE = { min: 30, max: 330, speed: 140, accel: 360, brake: 460 };
 const CABLE = { rest: 52, air: 150, lava: 62, up: 120 };
 const GRAVITY = 900;
 // The claw's mouth: how far its middle is below the end of the cable, and
@@ -33,7 +40,7 @@ function blob(x, y, r, temp = rand(0.2, 0.8)) {
 export function newGame() {
   const blobs = [];
   for (let i = 0; i < 7; i++) {
-    blobs.push(blob(rand(TANK.x0 + 30, TANK.x1 - 30), rand(TANK.top + 60, TANK.floor - 30), rand(14, 24)));
+    blobs.push(blob(TANK.cx + rand(-60, 60), rand(TANK.top + 60, TANK.floor - 30), rand(14, 24)));
   }
   return {
     time: 0,
@@ -59,7 +66,9 @@ export function clawPoint(s) {
   return { x, y, mx: x + Math.sin(angle) * MOUTH.drop, my: y + Math.cos(angle) * MOUTH.drop };
 }
 
-const inLava = (x, y) => x > TANK.x0 && x < TANK.x1 && y > TANK.top;
+const inLava = (x, y) => y > TANK.top && y < TANK.floor + 4 && Math.abs(x - TANK.cx) < halfAt(y);
+// Over the lamp's open top, where the claw can go in.
+const overOpening = (x) => Math.abs(x - TANK.cx) < TANK.halfTop - 22;
 
 // input: { dir: -1 | 0 | 1, drop: boolean (pressed this frame) }
 export function step(s, dt, input) {
@@ -97,13 +106,14 @@ export function step(s, dt, input) {
   const claw = s.claw;
   const p = clawPoint(s);
   const wet = inLava(p.x, p.y + 10);
-  const damp = wet ? 5 : 0.55;
-  claw.spin += (-(GRAVITY / claw.len) * Math.sin(claw.angle) - (c.a / claw.len) * Math.cos(claw.angle) - damp * claw.spin) * dt;
-  claw.angle = clamp(claw.angle + claw.spin * dt, -0.9, 0.9);
-  // Its prongs can't swing through the tank's walls.
+  // A heavy claw: it sways when the carriage starts and stops, then settles.
+  const damp = wet ? 5 : 3.2;
+  claw.spin += (-(GRAVITY / claw.len) * Math.sin(claw.angle) - 0.42 * (c.a / claw.len) * Math.cos(claw.angle) - damp * claw.spin) * dt;
+  claw.angle = clamp(claw.angle + claw.spin * dt, -0.6, 0.6);
+  // Its prongs can't swing through the glass.
   if (wet) {
     const after = clawPoint(s);
-    if (after.x < TANK.x0 + 26 || after.x > TANK.x1 - 26) {
+    if (Math.abs(after.x - TANK.cx) > halfAt(after.y) - 26) {
       claw.angle -= claw.spin * dt;
       claw.spin *= -0.3;
     }
@@ -120,11 +130,13 @@ export function step(s, dt, input) {
   } else if (s.phase === "drop") {
     claw.len += (wet ? CABLE.lava : CABLE.air) * dt;
     const m = clawPoint(s);
-    // It stops on a blob in its mouth, or at the bottom.
+    // It stops on a blob in its mouth, at the bottom, or on the lamp's rim
+    // if it isn't over the opening.
     const touching = s.blobs.find(
       (b) => !b.held && Math.abs(b.x - m.mx) < MOUTH.half && m.my > b.y - b.r * 0.35 && m.my < b.y + b.r,
     );
-    if (touching || m.my > TANK.floor - 8 || (!inLava(m.x, m.y) && m.my > WORLD.h - 30)) {
+    const onRim = !overOpening(c.x) && m.my > TANK.top - 6;
+    if (touching || onRim || m.my > TANK.floor - 8) {
       s.phase = "close";
       s.timer = 0;
     }
@@ -156,13 +168,13 @@ export function step(s, dt, input) {
   } else if (s.phase === "rise") {
     claw.len = Math.max(CABLE.rest, claw.len - CABLE.up * dt);
     // A hard swing can shake it loose.
-    if (s.held && Math.random() < Math.max(0, Math.abs(claw.spin) - 1.4) * 0.9 * dt) letGo(s, "slip");
+    if (s.held && Math.random() < Math.max(0, Math.abs(claw.spin) - 0.55) * 1.2 * dt) letGo(s, "slip");
     if (claw.len === CABLE.rest) {
       s.phase = "return";
       s.timer = 0;
     }
   } else if (s.phase === "return") {
-    if (s.held && Math.random() < Math.max(0, Math.abs(claw.spin) - 1.6) * 0.7 * dt) letGo(s, "slip");
+    if (s.held && Math.random() < Math.max(0, Math.abs(claw.spin) - 0.6) * 1 * dt) letGo(s, "slip");
     if (c.x === HOME_X && Math.abs(claw.angle) < 0.12) {
       s.phase = "release";
       s.timer = 0;
@@ -225,26 +237,29 @@ function stepLava(s, dt) {
       b.falling = false;
       b.vy *= 0.25;
     }
-    // Warmed by the bulb at the bottom it rises; cooled at the top it sinks.
+    // Warmed by the bulb at the bottom it rises, slowly, all the way to the
+    // top; there it cools and sinks back down to warm up again.
     const depth = (b.y - TANK.top) / height; // 0 top, 1 bottom
-    if (depth > 0.9) b.temp += dt * 0.32;
-    else b.temp -= dt * (0.03 + 0.09 * (1 - depth));
+    if (depth > 0.86) b.temp += dt * 0.22;
+    else if (depth < 0.14) b.temp -= dt * 0.14;
+    else b.temp -= dt * 0.01;
     b.temp = clamp(b.temp, 0, 1);
-    const lift = (0.5 - b.temp) * 95;
+    const lift = (0.45 - b.temp) * 52;
     b.vy += lift * dt;
-    b.vx += Math.sin(s.time * 0.35 + b.phase) * 6 * dt;
-    b.vy *= Math.exp(-1.6 * dt);
-    b.vx *= Math.exp(-1.1 * dt);
+    b.vx += Math.sin(s.time * 0.25 + b.phase) * 4 * dt;
+    b.vy *= Math.exp(-1.7 * dt);
+    b.vx *= Math.exp(-1.2 * dt);
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     // Kept inside the glass, settling into the lump at the bottom.
-    const x0 = TANK.x0 + b.r * 0.8;
-    const x1 = TANK.x1 - b.r * 0.8;
+    const half = halfAt(b.y) - b.r * 0.8;
+    const x0 = TANK.cx - half;
+    const x1 = TANK.cx + half;
     if (b.x < x0 || b.x > x1) {
       b.x = clamp(b.x, x0, x1);
       b.vx *= -0.3;
     }
-    const y0 = TANK.top + b.r * 0.9;
+    const y0 = TANK.top + b.r * 1.1;
     const y1 = TANK.floor - b.r * 0.55;
     if (b.y < y0 || b.y > y1) {
       b.y = clamp(b.y, y0, y1);
@@ -258,7 +273,7 @@ function stepLava(s, dt) {
   if (blobs.length < 7) {
     s.spawnIn -= dt;
     if (s.spawnIn <= 0) {
-      blobs.push(blob(rand(TANK.x0 + 40, TANK.x1 - 40), TANK.floor - 10, rand(13, 19), 0.75));
+      blobs.push(blob(TANK.cx + rand(-70, 70), TANK.floor - 10, rand(13, 19), 0.6));
       s.spawnIn = 3;
     }
   } else {
@@ -307,7 +322,7 @@ function stepLava(s, dt) {
     }
   }
   for (const b of free) {
-    if (b.r > 21 && b.temp > 0.68 && b.vy < -22 && blobs.length < 10 && Math.random() < 0.12 * dt) {
+    if (b.r > 21 && b.temp > 0.6 && b.vy < -12 && blobs.length < 10 && Math.random() < 0.1 * dt) {
       const r = b.r / Math.SQRT2;
       const twin = blob(b.x + r * 0.7, b.y + r * 0.5, r, b.temp - 0.15);
       twin.vy = b.vy * 0.5;

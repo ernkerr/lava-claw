@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Lava Claw</title>
+    <meta
+      name="description"
+      content="A claw machine where the prizes are the wax blobs in a giant lava lamp. Steer the swinging claw and grab one as it drifts by."
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Monoton&family=Newsreader:ital,opsz,wght@1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="top">
+        <div>
+          <h1 class="wordmark">Lava Claw</h1>
+          <p class="lede">
+            A claw machine where the prizes are the wax in a lava lamp. Two looks for the same game: play, and
+            they move together.
+          </p>
+        </div>
+        <button type="button" class="pill" id="sound" aria-pressed="true">Sound on</button>
+      </header>
+
+      <div class="machines">
+        <figure>
+          <canvas id="real" role="img" aria-label="The claw machine, real-looking"></canvas>
+          <figcaption>Real-looking</figcaption>
+        </figure>
+        <figure>
+          <canvas id="flat" role="img" aria-label="The claw machine, flat cartoon"></canvas>
+          <figcaption>Flat cartoon</figcaption>
+        </figure>
+      </div>
+
+      <footer class="bottom">
+        <p class="status" id="status" aria-live="polite">Steer the claw, let it settle, then drop.</p>
+        <div class="pad">
+          <button type="button" class="key" data-steer="left" aria-label="Move left">←</button>
+          <button type="button" class="key" data-steer="right" aria-label="Move right">→</button>
+          <button type="button" class="key drop" id="drop">Drop</button>
+        </div>
+        <p class="keys"><kbd>←</kbd> <kbd>→</kbd> steer · <kbd>Space</kbd> drop</p>
+        <p class="caught">Blobs caught: <strong id="count">0</strong></p>
+      </footer>
+    </main>
+  </body>
+</html>
